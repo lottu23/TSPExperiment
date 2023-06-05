@@ -1,20 +1,62 @@
-﻿// TSPExperiment.cpp : 此文件包含 "main" 函数。程序执行将在此处开始并结束。
-//
-
+﻿#include <fstream>
 #include <iostream>
 
-int main()
-{
-    std::cout << "Hello World!\n";
+using namespace std;
+
+using ArcType = float;
+
+const int MaxNodeNum = 100;
+
+typedef struct {
+  ArcType arcs[MaxNodeNum][MaxNodeNum];
+  int node_num, arc_num;
+} AMGraph;
+
+
+/// <summary>
+/// 输入数据并生成相应的邻接矩阵
+/// </summary>
+/// <param name="graph">生成的邻接矩阵表</param>
+void CreateUDN(AMGraph& graph) {
+  //输入数据
+  ifstream fin;
+  fin.open("att8.tsp", ios::in);
+  if (!fin.is_open()) {
+    cout << "open file failed" << endl;
+  }
+  fin >> graph.node_num;
+  graph.arc_num = graph.node_num * (graph.node_num - 1) / 2;
+  pair<int, int> pos[MaxNodeNum];
+  int a;
+  for (int i = 0; i < graph.node_num; i++) {
+    fin >> a >> pos[i].first >> pos[i].second;
+  }
+
+  //初始化结点距离为无限大值
+  for (int i = 0; i < graph.node_num; i++) {
+    for (int j = 0; j < graph.node_num; j++) {
+      graph.arcs[i][j] = (ArcType)std::numeric_limits<float>().infinity();
+    }
+  }
+
+  //将权值设置为结点间的距离
+  for (int i = 0; i < graph.node_num; i++) {
+    for (int j = 0; j < graph.node_num; j++) {
+      if (i < j)
+        graph.arcs[i][j] = graph.arcs[j][i] =
+            sqrt(pow(pos[j].first - pos[i].first, 2) +
+                 pow(pos[j].second - pos[i].second, 2));
+    }
+  }
 }
 
-// 运行程序: Ctrl + F5 或调试 >“开始执行(不调试)”菜单
-// 调试程序: F5 或调试 >“开始调试”菜单
-
-// 入门使用技巧: 
-//   1. 使用解决方案资源管理器窗口添加/管理文件
-//   2. 使用团队资源管理器窗口连接到源代码管理
-//   3. 使用输出窗口查看生成输出和其他消息
-//   4. 使用错误列表窗口查看错误
-//   5. 转到“项目”>“添加新项”以创建新的代码文件，或转到“项目”>“添加现有项”以将现有代码文件添加到项目
-//   6. 将来，若要再次打开此项目，请转到“文件”>“打开”>“项目”并选择 .sln 文件
+int main() {
+  AMGraph graph;
+  CreateUDN(graph);
+  for (int i = 0; i < graph.node_num; i++) {
+    for (int j = 0; j < graph.node_num; j++) {
+      cout << graph.arcs[i][j] << " ";
+    }
+    cout << endl;
+  }
+}
