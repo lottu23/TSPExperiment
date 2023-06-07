@@ -18,50 +18,51 @@ struct AMGraph {
 };
 
 struct Edge {
-  int start;
+  int begin;
   int end;
   int weight;
 };
 
-void CreateUDN(AMGraph &graph);
+AMGraph *CreateUDN();
+void PrintInputGraph(AMGraph *graph);
 void QuickSort(Edge *edges, int left, int right);
-int Find(int *ends, int f);
-void GetMST(const AMGraph &graph);
+int FindEnd(int *ends, int f);
+Edge *GetMST(AMGraph *graph);
+void PrintMST(Edge *mst, int n);
+AMGraph *GetEulerGraph(Edge *mst, int n);
+void PrintEulerGraph(AMGraph *graph);
 
 int main() {
-  AMGraph graph;
-  CreateUDN(graph);
+  AMGraph *graph = CreateUDN();
 
-  /*for (int i = 0; i < graph.node_num; i++) {
-    for (int j = 0; j < graph.node_num; j++) {
-      cout << graph.arcs[i][j] << " ";
+  Edge *mst = GetMST(graph);
+
+  PrintMST(mst, graph->node_num);
+
+  AMGraph *euler_graph = GetEulerGraph(mst,graph->node_num);
+}
+
+void PrintInputGraph(AMGraph *graph) {
+  for (int i = 0; i < graph->node_num; i++) {
+    for (int j = 0; j < graph->node_num; j++) {
+      cout << graph->arcs[i][j] << " ";
     }
     cout << endl;
-  }*/
-
-  Edge edges[MaxNodeNum];
-  int k = 0;
-
-  for (int i = 0; i < graph.node_num; i++) {
-    for (int j = 0; j < graph.node_num; j++) {
-      if (i < j) {
-        edges[k++] = Edge{i, j, graph.arcs[i][j]};
-      }
-    }
-  }
-
-  QuickSort(edges, 0, graph.arc_num - 1);
-
-  for (int i = 0; i < k; i++) {
-    printf("%d %d %d\n", edges[i].start, edges[i].end, edges[i].weight);
   }
 }
+
+void PrintMST(Edge *mst, int n) {
+  for (int i = 0; i < n; i++) {
+    printf("(%d %d) %d\n", mst[i].begin, mst[i].end, mst[i].weight);
+  }
+}
+
 
 /// <summary>
 /// 输入数据并生成相应的邻接矩阵
 /// </summary>
 /// <param name="graph">生成的邻接矩阵表</param>
-void CreateUDN(AMGraph &graph) {
+AMGraph *CreateUDN() {
   // 输入数据
   ifstream fin;
   fin.open("data.tsp", ios::in);
@@ -69,20 +70,24 @@ void CreateUDN(AMGraph &graph) {
     cout << "open file failed" << endl;
   }
 
-  fin >> graph.node_num;
-  graph.arc_num = graph.node_num * (graph.node_num - 1) / 2;
+  AMGraph *graph = new AMGraph;
 
-  for (int i = 0; i < graph.node_num; i++) {
-    for (int j = 0; j < graph.node_num; j++) {
-      graph.arcs[i][j] = INT_MAX;
+  fin >> graph->node_num;
+  graph->arc_num = graph->node_num * (graph->node_num - 1) / 2;
+
+  for (int i = 0; i < graph->node_num; i++) {
+    for (int j = 0; j < graph->node_num; j++) {
+      graph->arcs[i][j] = INT_MAX;
     }
   }
 
   int a, b, w;
-  for (int i = 0; i < graph.arc_num; i++) {
+  for (int i = 0; i < graph->arc_num; i++) {
     fin >> a >> b >> w;
-    graph.arcs[a - 1][b - 1] = graph.arcs[b - 1][a - 1] = w;
+    graph->arcs[a - 1][b - 1] = graph->arcs[b - 1][a - 1] = w;
   }
+
+  return graph;
 }
 
 /// <summary>
@@ -118,7 +123,7 @@ void QuickSort(Edge *edges, int left, int right) {
 /// <param name="ends">结点对应的终点数组</param>
 /// <param name="f">待查找终点的结点</param>
 /// <returns>终点</returns>
-int Find(int *ends, int f) {
+int FindEnd(int *ends, int f) {
   while (ends[f] > 0) {
     f = ends[f];
   }
@@ -129,15 +134,56 @@ int Find(int *ends, int f) {
 /// 使用Kruskal算法获取最小生成树
 /// </summary>
 /// <param name="graph"></param>
-void GetMST(const AMGraph &graph) {
+Edge *GetMST(AMGraph *graph) {
+  // 定义边的集合
   Edge edges[MaxNodeNum];
   int k = 0;
 
-  for (int i = 0; i < graph.node_num; i++) {
-    for (int j = 0; j < graph.node_num; j++) {
+  for (int i = 0; i < graph->node_num; i++) {
+    for (int j = 0; j < graph->node_num; j++) {
       if (i < j) {
-        edges[k++] = Edge{i, j, graph.arcs[i][j]};
+        edges[k++] = Edge{i, j, graph->arcs[i][j]};
       }
     }
   }
+
+  // 将边的集合按照权重排序
+  QuickSort(edges, 0, graph->arc_num - 1);
+
+  // 定义各结点的终点
+  int ends[MaxNodeNum];
+  for (int i = 0; i < graph->node_num; i++) {
+    ends[i] = 0;
+  }
+
+  Edge mst[MaxNodeNum];
+
+  // 按顺序将边加入并检查是否有回路
+  int count = 0;
+  for (int i = 0; i < graph->arc_num; i++) {
+    int n = FindEnd(ends, edges[i].begin);
+    int m = FindEnd(ends, edges[i].end);
+
+    if (n != m) {
+      ends[n] = m;
+      mst[count] = {edges[i].begin, edges[i].end, edges[i].weight};
+      ++count;
+      if (count == graph->node_num - 1) {
+        break;
+      }
+    }
+  }
+
+  return edges;
+}
+
+AMGraph *GetEulerGraph(Edge *mst,int n) {
+  AMGraph *graph = new AMGraph;
+  for (int i = 0; i < n; i++) {
+    int begin = mst[i].begin;
+    int end = mst[i].end;
+    graph->arcs[begin][end] = graph->arcs[end][begin] = mst[i].weight;
+  }
+
+  return graph;
 }
