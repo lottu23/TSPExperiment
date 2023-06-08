@@ -37,9 +37,9 @@ int main() {
 
   Edge *mst = GetMST(graph);
 
-  PrintMST(mst, graph->node_num);
-
   AMGraph *euler_graph = GetEulerGraph(mst,graph->node_num);
+
+  PrintEulerGraph(euler_graph);
 }
 
 void PrintInputGraph(AMGraph *graph) {
@@ -54,6 +54,15 @@ void PrintInputGraph(AMGraph *graph) {
 void PrintMST(Edge *mst, int n) {
   for (int i = 0; i < n-1; i++) {
     printf("(%d %d) %d\n", mst[i].begin, mst[i].end, mst[i].weight);
+  }
+}
+
+void PrintEulerGraph(AMGraph *graph) {
+  for (int i = 0; i < graph->node_num; i++) {
+    for (int j = 0; j < graph->node_num; j++) {
+      cout << graph->arcs[i][j] << " ";
+    }
+    cout << endl;
   }
 }
 
@@ -180,7 +189,16 @@ Edge *GetMST(AMGraph *graph) {
 
 AMGraph *GetEulerGraph(Edge *mst,int n) {
   AMGraph *graph = new AMGraph;
-  for (int i = 0; i < n; i++) {
+  graph->node_num = n - 1;
+  graph->arc_num = graph->node_num * (graph->node_num - 1);
+
+  for (int i = 0; i < graph->node_num; i++) {
+    for (int j = 0; j < graph->node_num; j++) {
+      graph->arcs[i][j] = INT_MAX;
+    }
+  }
+
+  for (int i = 0; i < graph->node_num; i++) {
     int begin = mst[i].begin;
     int end = mst[i].end;
     graph->arcs[begin][end] = graph->arcs[end][begin] = mst[i].weight;
