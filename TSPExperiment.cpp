@@ -52,7 +52,7 @@ void PrintInputGraph(AMGraph *graph) {
 }
 
 void PrintMST(Edge *mst, int n) {
-  for (int i = 0; i < n; i++) {
+  for (int i = 0; i < n-1; i++) {
     printf("(%d %d) %d\n", mst[i].begin, mst[i].end, mst[i].weight);
   }
 }
@@ -127,6 +127,7 @@ int FindEnd(int *ends, int f) {
   while (ends[f] > 0) {
     f = ends[f];
   }
+
   return f;
 }
 
@@ -142,7 +143,7 @@ Edge *GetMST(AMGraph *graph) {
   for (int i = 0; i < graph->node_num; i++) {
     for (int j = 0; j < graph->node_num; j++) {
       if (i < j) {
-        edges[k++] = Edge{i, j, graph->arcs[i][j]};
+        edges[k++] = {i, j, graph->arcs[i][j]};
       }
     }
   }
@@ -156,7 +157,7 @@ Edge *GetMST(AMGraph *graph) {
     ends[i] = 0;
   }
 
-  Edge mst[MaxNodeNum];
+  Edge *mst=new Edge[MaxNodeNum];
 
   // 按顺序将边加入并检查是否有回路
   int count = 0;
@@ -174,7 +175,7 @@ Edge *GetMST(AMGraph *graph) {
     }
   }
 
-  return edges;
+  return mst;
 }
 
 AMGraph *GetEulerGraph(Edge *mst,int n) {
