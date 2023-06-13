@@ -1,5 +1,7 @@
 ﻿#include <fstream>
 #include <iostream>
+#include <stack>
+#include <vector>
 
 #include "randomdata.h"
 
@@ -24,20 +26,29 @@ struct Edge {
 };
 
 AMGraph *CreateUDN();
+
 void PrintInputGraph(AMGraph *graph);
+
 void QuickSort(Edge *edges, int left, int right);
+
 int FindEnd(int *ends, int f);
+
 Edge *GetMST(AMGraph *graph);
+
 void PrintMST(Edge *mst, int n);
+
 AMGraph *GetEulerGraph(Edge *mst, int n);
+
 void PrintEulerGraph(AMGraph *graph);
+
+vector<int> FindEulerPath(AMGraph *graph);
 
 int main() {
   AMGraph *graph = CreateUDN();
 
   Edge *mst = GetMST(graph);
 
-  AMGraph *euler_graph = GetEulerGraph(mst,graph->node_num);
+  AMGraph *euler_graph = GetEulerGraph(mst, graph->node_num);
 
   PrintEulerGraph(euler_graph);
 }
@@ -52,7 +63,7 @@ void PrintInputGraph(AMGraph *graph) {
 }
 
 void PrintMST(Edge *mst, int n) {
-  for (int i = 0; i < n-1; i++) {
+  for (int i = 0; i < n - 1; i++) {
     printf("(%d %d) %d\n", mst[i].begin, mst[i].end, mst[i].weight);
   }
 }
@@ -65,7 +76,6 @@ void PrintEulerGraph(AMGraph *graph) {
     cout << endl;
   }
 }
-
 
 /// <summary>
 /// 输入数据并生成相应的邻接矩阵
@@ -166,7 +176,7 @@ Edge *GetMST(AMGraph *graph) {
     ends[i] = 0;
   }
 
-  Edge *mst=new Edge[MaxNodeNum];
+  Edge *mst = new Edge[MaxNodeNum];
 
   // 按顺序将边加入并检查是否有回路
   int count = 0;
@@ -187,7 +197,7 @@ Edge *GetMST(AMGraph *graph) {
   return mst;
 }
 
-AMGraph *GetEulerGraph(Edge *mst,int n) {
+AMGraph *GetEulerGraph(Edge *mst, int n) {
   AMGraph *graph = new AMGraph;
   graph->node_num = n - 1;
   graph->arc_num = graph->node_num * (graph->node_num - 1);
@@ -205,4 +215,25 @@ AMGraph *GetEulerGraph(Edge *mst,int n) {
   }
 
   return graph;
+}
+
+vector<int> FindEulerPath(AMGraph *graph) {
+  //边标记数组
+  bool vis[MaxNodeNum][MaxNodeNum];
+  for (int i = 0; i < graph->node_num; i++) {
+    for (int j = 0; j < graph->node_num; j++) {
+      if (i == j)
+        vis[i][j] = false;
+      else
+        vis[i][j] = true;
+    }
+  }
+
+  vector<int> res_path;
+  stack<int> cur_path;
+  int curv = 0;
+  cur_path.push(curv);
+  while (!cur_path.empty()) {
+    
+  }
 }
