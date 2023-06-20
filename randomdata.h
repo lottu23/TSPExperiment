@@ -21,7 +21,7 @@ void recur(int node_a, int node_b, int weight);
 /// </summary>
 void GenerateRandomData(int n) {
   srand((unsigned int)time(nullptr));
-  num = 10;
+  num = n;
   // ≥ı ºªØ
   for (int i = 0; i < num; i++) {
     for (int j = 0; j < num; j++) {

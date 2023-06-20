@@ -9,7 +9,7 @@ using namespace std;
 
 using ArcType = int;
 
-const int MaxNodeNum = 100;
+const int MaxNodeNum = 105;
 
 /// <summary>
 /// 邻接矩阵结构
@@ -29,28 +29,38 @@ AMGraph *CreateUDN();
 
 void PrintInputGraph(AMGraph *graph);
 
-void QuickSort(Edge *edges, int left, int right);
+void QuickSort(vector<Edge> edges, int left, int right);
 
 int FindEnd(int *ends, int f);
 
-Edge *GetMST(AMGraph *graph);
+vector<Edge> GetMST(AMGraph *graph);
 
-void PrintMST(Edge *mst, int n);
+void PrintMST(vector<Edge> mst);
 
-AMGraph *GetEulerGraph(Edge *mst, int n);
+AMGraph *GetEulerGraph(vector<Edge> mst, int n);
 
 void PrintEulerGraph(AMGraph *graph);
 
-vector<int> FindEulerPath(AMGraph *graph);
+vector<int> GetEulerPath(AMGraph *graph);
+
+void PrintEulerPath(vector<int> &euler_path);
+
+vector<int> GetTSPPath(AMGraph *graph, vector<int> &euler_path);
+
+void PrintTSPPath(vector<int> TSP_path);
 
 int main() {
   AMGraph *graph = CreateUDN();
 
-  Edge *mst = GetMST(graph);
+  vector<Edge> mst = GetMST(graph);
 
   AMGraph *euler_graph = GetEulerGraph(mst, graph->node_num);
+  
+  vector<int> euler_path = GetEulerPath(euler_graph);
 
-  PrintEulerGraph(euler_graph);
+  vector<int> TSP_path = GetTSPPath(euler_graph, euler_path);
+
+  PrintTSPPath(TSP_path);
 }
 
 void PrintInputGraph(AMGraph *graph) {
@@ -62,8 +72,8 @@ void PrintInputGraph(AMGraph *graph) {
   }
 }
 
-void PrintMST(Edge *mst, int n) {
-  for (int i = 0; i < n - 1; i++) {
+void PrintMST(vector<Edge> mst) {
+  for (int i = 0; i < mst.size(); i++) {
     printf("(%d %d) %d\n", mst[i].begin, mst[i].end, mst[i].weight);
   }
 }
@@ -96,7 +106,7 @@ AMGraph *CreateUDN() {
 
   for (int i = 0; i < graph->node_num; i++) {
     for (int j = 0; j < graph->node_num; j++) {
-      graph->arcs[i][j] = INT_MAX;
+      graph->arcs[i][j] = -1;
     }
   }
 
@@ -115,7 +125,7 @@ AMGraph *CreateUDN() {
 /// <param name="edges">边的集合</param>
 /// <param name="left">左侧边界</param>
 /// <param name="right">右侧边界</param>
-void QuickSort(Edge *edges, int left, int right) {
+void QuickSort(vector<Edge> edges, int left, int right) {
   if (left > right)
     return;
   int i = left, j = right;
@@ -154,15 +164,15 @@ int FindEnd(int *ends, int f) {
 /// 使用Kruskal算法获取最小生成树
 /// </summary>
 /// <param name="graph"></param>
-Edge *GetMST(AMGraph *graph) {
+vector<Edge> GetMST(AMGraph *graph) {
   // 定义边的集合
-  Edge edges[MaxNodeNum];
+  vector<Edge> edges;
   int k = 0;
 
   for (int i = 0; i < graph->node_num; i++) {
     for (int j = 0; j < graph->node_num; j++) {
       if (i < j) {
-        edges[k++] = {i, j, graph->arcs[i][j]};
+        edges.push_back({i, j, graph->arcs[i][j]});
       }
     }
   }
@@ -176,7 +186,7 @@ Edge *GetMST(AMGraph *graph) {
     ends[i] = 0;
   }
 
-  Edge *mst = new Edge[MaxNodeNum];
+  vector<Edge> mst;
 
   // 按顺序将边加入并检查是否有回路
   int count = 0;
@@ -186,7 +196,7 @@ Edge *GetMST(AMGraph *graph) {
 
     if (n != m) {
       ends[n] = m;
-      mst[count] = {edges[i].begin, edges[i].end, edges[i].weight};
+      mst.push_back({edges[i].begin, edges[i].end, edges[i].weight});
       ++count;
       if (count == graph->node_num - 1) {
         break;
@@ -197,18 +207,18 @@ Edge *GetMST(AMGraph *graph) {
   return mst;
 }
 
-AMGraph *GetEulerGraph(Edge *mst, int n) {
+AMGraph *GetEulerGraph(vector<Edge> mst, int n) {
   AMGraph *graph = new AMGraph;
-  graph->node_num = n - 1;
+  graph->node_num = n;
   graph->arc_num = graph->node_num * (graph->node_num - 1);
 
   for (int i = 0; i < graph->node_num; i++) {
     for (int j = 0; j < graph->node_num; j++) {
-      graph->arcs[i][j] = INT_MAX;
+      graph->arcs[i][j] = -1;
     }
   }
 
-  for (int i = 0; i < graph->node_num; i++) {
+  for (int i = 0; i < mst.size(); i++) {
     int begin = mst[i].begin;
     int end = mst[i].end;
     graph->arcs[begin][end] = graph->arcs[end][begin] = mst[i].weight;
@@ -217,23 +227,69 @@ AMGraph *GetEulerGraph(Edge *mst, int n) {
   return graph;
 }
 
-vector<int> FindEulerPath(AMGraph *graph) {
-  //边标记数组
-  bool vis[MaxNodeNum][MaxNodeNum];
+vector<int> GetEulerPath(AMGraph *graph) {
+  vector<int> euler_path;
+  stack<int> stk;
+  bool vis[MaxNodeNum];
   for (int i = 0; i < graph->node_num; i++) {
+    vis[i] = false;
+  }
+
+  stk.push(0);
+  euler_path.push_back(0);
+  vis[0] = true;
+  int t = 0;
+  while (!stk.empty()) {
+    bool flag = true;
+    t = stk.top();
     for (int j = 0; j < graph->node_num; j++) {
-      if (i == j)
-        vis[i][j] = false;
-      else
-        vis[i][j] = true;
+      if (graph->arcs[t][j] > -1 && !vis[j]) {
+        stk.push(j);
+        euler_path.push_back(j);
+        vis[j] = true;
+        flag = false;
+      }
+    }
+    if (flag) {
+      stk.pop();
+      if (!stk.empty()) {
+        euler_path.push_back(stk.top());
+      }
     }
   }
 
-  vector<int> res_path;
-  stack<int> cur_path;
-  int curv = 0;
-  cur_path.push(curv);
-  while (!cur_path.empty()) {
-    
+  return euler_path;
+}
+
+void PrintEulerPath(vector<int> &euler_path) {
+  for (int i = 0; i < euler_path.size(); i++) {
+    cout << euler_path[i] << " ";
   }
+  cout << endl;
+}
+
+vector<int> GetTSPPath(AMGraph *graph, vector<int> &euler_path) {
+  int vis[MaxNodeNum];
+  vector<int> TSP_path;
+  for (int i = 0; i < graph->node_num; i++) {
+    vis[i] = false;
+  }
+  for (int i = 0; i < euler_path.size(); i++) {
+    if (!vis[i]) {
+      TSP_path.push_back(i);
+      vis[i] = true;
+    }
+  }
+  TSP_path.push_back(0);
+
+  return TSP_path;
+}
+
+void PrintTSPPath(vector<int> TSP_path) {
+  for (int i = 0; i < TSP_path.size(); i++) {
+    if (i > 0)
+      cout << "->";
+    cout << TSP_path[i] + 1;
+  }
+  cout << endl;
 }
